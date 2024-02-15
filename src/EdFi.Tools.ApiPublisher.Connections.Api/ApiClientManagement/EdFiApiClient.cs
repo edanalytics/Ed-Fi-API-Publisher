@@ -97,15 +97,15 @@ namespace EdFi.Tools.ApiPublisher.Connections.Api.ApiClientManagement
                                    attribute.AttributeType.Name == nameof(TargetFrameworkAttribute));
                 var customAttribute = targetFrameWorkAttributes.FirstOrDefault();
                 var customAttributeValue = customAttribute?.NamedArguments.FirstOrDefault();
-                if (customAttributeValue != null)
-                {
-                    var dotnetVersionValues = customAttributeValue?.TypedValue.Value.ToString().Split(' ');
-                    if (dotnetVersionValues.Length > 0)
-                    {
-                        var dotnetInfo = new ProductInfoHeaderValue(dotnetVersionValues[0], dotnetVersionValues[1]);
-                        httpClient.DefaultRequestHeaders.UserAgent.Add(dotnetInfo);
-                    }
-                }
+                // if (customAttributeValue != null)
+                // {
+                //     var dotnetVersionValues = customAttributeValue?.TypedValue.Value.ToString().Split(' ');
+                //     if (dotnetVersionValues.Length > 0)
+                //     {
+                //         var dotnetInfo = new ProductInfoHeaderValue(dotnetVersionValues[0], dotnetVersionValues[1]);
+                //         httpClient.DefaultRequestHeaders.UserAgent.Add(dotnetInfo);
+                //     }
+                // }
                 httpClient.DefaultRequestHeaders.UserAgent.Add(productInfo);
             }
         }
