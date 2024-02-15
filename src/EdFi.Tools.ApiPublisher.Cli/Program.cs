@@ -172,13 +172,13 @@ namespace EdFi.Tools.ApiPublisher.Cli
                 _logger.Information($"Processing started.");
                 await changeProcessor.ProcessChangesAsync(changeProcessorConfiguration, cancellationToken).ConfigureAwait(false);
                 _logger.Information($"Processing complete.");
-
+                Log.CloseAndFlush();
                 return 0;
             }
             catch (Exception ex)
             {
                 _logger.Error($"Processing failed: {string.Join(" ", GetExceptionMessages(ex))}");
-
+                Log.CloseAndFlush();
                 return -1;
             }
 
