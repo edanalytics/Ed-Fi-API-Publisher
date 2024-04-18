@@ -1,11 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <AssemblyName>EdFiApiPublisher</AssemblyName>
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>10</LangVersion>
     <NoWarn>NU5100, NU5124</NoWarn>
-  </PropertyGroup>
+  <RuntimeIdentifier>linux-musl-x64</RuntimeIdentifier></PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="9.0.0" />
     <PackageReference Include="AWSSDK.CloudWatchLogs" Version="3.7.304.6" />
