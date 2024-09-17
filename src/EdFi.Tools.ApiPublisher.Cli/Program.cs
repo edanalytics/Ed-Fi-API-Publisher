@@ -303,6 +303,7 @@ namespace EdFi.Tools.ApiPublisher.Cli
 
         private static void InitializeLogging()
         {
+            Serilog.Debugging.SelfLog.Enable(Console.Error);
             var configBuilder = new ConfigurationBuilder()
                 .AddJsonFile("logging.json");
             var loggerConfig = configBuilder.Build();
