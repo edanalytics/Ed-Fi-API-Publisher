@@ -5,6 +5,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>10</LangVersion>
     <NoWarn>NU5100, NU5124</NoWarn>
+    <RuntimeIdentifier>linux-musl-x64</RuntimeIdentifier>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="9.0.0" />
