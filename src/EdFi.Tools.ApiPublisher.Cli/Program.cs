@@ -20,6 +20,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Destructurama;
 
 namespace EdFi.Tools.ApiPublisher.Cli
 {
@@ -302,6 +303,7 @@ namespace EdFi.Tools.ApiPublisher.Cli
 
         private static void InitializeLogging()
         {
+            Serilog.Debugging.SelfLog.Enable(Console.Error);
             var configBuilder = new ConfigurationBuilder()
                 .AddJsonFile("logging.json");
             var loggerConfig = configBuilder.Build();
@@ -309,6 +311,7 @@ namespace EdFi.Tools.ApiPublisher.Cli
                .ReadFrom.Configuration(loggerConfig)
                .Enrich.WithThreadId()
                .Enrich.FromLogContext()
+               .Destructure.JsonNetTypes()
                .CreateLogger();
         }
     }

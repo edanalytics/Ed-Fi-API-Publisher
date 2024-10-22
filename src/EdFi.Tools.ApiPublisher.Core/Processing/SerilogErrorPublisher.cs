@@ -25,7 +25,8 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing
         {
             return Task.Run(() =>
             {
-                _logger.Error(JsonConvert.SerializeObject(messages, Formatting.Indented));
+                // _logger.Error(JsonConvert.SerializeObject(messages, Formatting.Indented));
+                _logger.Error("{@messages}", messages);
                 Interlocked.Add(ref _publishedErrorCount, messages.Length);
             });
         }
