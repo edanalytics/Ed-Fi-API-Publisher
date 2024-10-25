@@ -61,7 +61,7 @@ public class EdFiApiLimitOffsetPagingStreamResourcePageMessageProducer : IStream
 
         var pageMessages = new List<StreamResourcePageMessage<TProcessDataMessage>>();
 
-        _logger.Debug($"limit: {limit}, offset: {offset}");
+        _logger.Debug($"{message.ResourceUrl}: limit={limit} offset={offset} totalCount={totalCount}");
 
         while (offset < totalCount)
         {
@@ -96,7 +96,7 @@ public class EdFiApiLimitOffsetPagingStreamResourcePageMessageProducer : IStream
             // Page-strategy specific context
             pageMessages.Last().IsFinalPage = true;
         }
-
+        _logger.Debug($"{message.ResourceUrl}: pageMessage.Count={pageMessage.Count}");
         return pageMessages;
     }
 }
