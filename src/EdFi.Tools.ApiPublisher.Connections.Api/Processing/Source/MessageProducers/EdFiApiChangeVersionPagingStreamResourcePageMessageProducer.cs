@@ -16,7 +16,7 @@ namespace EdFi.Tools.ApiPublisher.Connections.Api.Processing.Source.MessageProdu
 public class EdFiApiChangeVersionPagingStreamResourcePageMessageProducer : IStreamResourcePageMessageProducer
 {
     private readonly ISourceTotalCountProvider _sourceTotalCountProvider;
-    private readonly ILogger _logger = Log.ForContext(typeof(EdFiApiLimitOffsetPagingStreamResourcePageMessageProducer));
+    private readonly ILogger _logger = Log.ForContext(typeof(EdFiApiChangeVersionPagingStreamResourcePageMessageProducer));
 
     public EdFiApiChangeVersionPagingStreamResourcePageMessageProducer(ISourceTotalCountProvider sourceTotalCountProvider)
     {
@@ -64,6 +64,12 @@ public class EdFiApiChangeVersionPagingStreamResourcePageMessageProducer : IStre
         {
             var noOfPartitions = Math.Ceiling((decimal)(message.ChangeWindow.MaxChangeVersion - message.ChangeWindow.MinChangeVersion)
                             / options.ChangeVersionPagingWindowSize);
+
+            // If totalCount > 0, there must be at least 1 partition.
+            if (noOfPartitions == 0)
+            {
+                noOfPartitions = 1;
+            }
 
             int changeVersionWindow = 0;
             long changeVersionWindowStartValue = message.ChangeWindow.MinChangeVersion;
