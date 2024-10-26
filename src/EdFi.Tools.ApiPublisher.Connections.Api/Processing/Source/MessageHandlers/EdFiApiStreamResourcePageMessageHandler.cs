@@ -48,7 +48,6 @@ public class EdFiApiStreamResourcePageMessageHandler : IStreamResourcePageMessag
         var edFiApiClient = _sourceEdFiApiClientProvider.GetApiClient();
 
         string changeWindowQueryStringParameters = ApiRequestHelper.GetChangeWindowQueryStringParameters(message.ChangeWindow);
-        _logger.Debug($"ChangeWindowQueryString: {changeWindowQueryStringParameters}");
 
         try
         {

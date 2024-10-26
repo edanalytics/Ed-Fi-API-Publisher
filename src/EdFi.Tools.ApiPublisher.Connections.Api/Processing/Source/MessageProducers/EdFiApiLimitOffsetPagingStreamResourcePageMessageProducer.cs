@@ -61,8 +61,6 @@ public class EdFiApiLimitOffsetPagingStreamResourcePageMessageProducer : IStream
 
         var pageMessages = new List<StreamResourcePageMessage<TProcessDataMessage>>();
 
-        _logger.Debug($"limit: {limit}, offset: {offset}");
-
         while (offset < totalCount)
         {
             var pageMessage = new StreamResourcePageMessage<TProcessDataMessage>
