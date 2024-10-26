@@ -65,6 +65,12 @@ public class EdFiApiChangeVersionPagingStreamResourcePageMessageProducer : IStre
             var noOfPartitions = Math.Ceiling((decimal)(message.ChangeWindow.MaxChangeVersion - message.ChangeWindow.MinChangeVersion)
                             / options.ChangeVersionPagingWindowSize);
 
+            // If totalCount > 0, there must be at least 1 partition.
+            if (noOfPartitions == 0)
+            {
+                noOfPartitions = 1;
+            }
+
             int changeVersionWindow = 0;
             long changeVersionWindowStartValue = message.ChangeWindow.MinChangeVersion;
 
