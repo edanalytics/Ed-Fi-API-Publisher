@@ -96,7 +96,7 @@ public class EdFiApiLimitOffsetPagingStreamResourcePageMessageProducer : IStream
             // Page-strategy specific context
             pageMessages.Last().IsFinalPage = true;
         }
-        _logger.Debug($"{message.ResourceUrl}: pageMessage.Count={pageMessages.Count}");
+        _logger.Debug($"{message.ResourceUrl}: pageMessage.Count={pageMessage.Count}");
         return pageMessages;
     }
 }
