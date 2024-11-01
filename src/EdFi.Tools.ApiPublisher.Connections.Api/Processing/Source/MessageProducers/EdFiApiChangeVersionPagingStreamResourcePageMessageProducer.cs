@@ -41,27 +41,27 @@ public class EdFiApiChangeVersionPagingStreamResourcePageMessageProducer : IStre
         }
 
         // Get total count of items in source resource for change window (if applicable)
-        var (totalCountSuccess, totalCount) = await _sourceTotalCountProvider.TryGetTotalCountAsync(
-            message.ResourceUrl,
-            options,
-            message.ChangeWindow,
-            errorHandlingBlock,
-            cancellationToken);
+        // var (totalCountSuccess, totalCount) = await _sourceTotalCountProvider.TryGetTotalCountAsync(
+        //     message.ResourceUrl,
+        //     options,
+        //     message.ChangeWindow,
+        //     errorHandlingBlock,
+        //     cancellationToken);
 
-        if (!totalCountSuccess)
-        {
-            // Allow processing to continue without performing additional work on this resource.
-            return Enumerable.Empty<StreamResourcePageMessage<TProcessDataMessage>>();
-        }
+        // if (!totalCountSuccess)
+        // {
+        //     // Allow processing to continue without performing additional work on this resource.
+        //     return Enumerable.Empty<StreamResourcePageMessage<TProcessDataMessage>>();
+        // }
 
-        _logger.Information($"{message.ResourceUrl}: Total count = {totalCount}");
+        // _logger.Information($"{message.ResourceUrl}: Total count = {totalCount}");
 
         int limit = message.PageSize;
 
         var pageMessages = new List<StreamResourcePageMessage<TProcessDataMessage>>();
         
-        if (totalCount > 0)
-        {
+        // if (totalCount > 0)
+        // {
             var noOfPartitions = Math.Ceiling((decimal)(message.ChangeWindow.MaxChangeVersion - message.ChangeWindow.MinChangeVersion)
                             / options.ChangeVersionPagingWindowSize);
 
@@ -129,7 +129,7 @@ public class EdFiApiChangeVersionPagingStreamResourcePageMessageProducer : IStre
                 changeVersionWindow++;
 
             }
-        }
+        // }
 
         // Flag the last page for special "continuation" processing
         if (pageMessages.Any())
