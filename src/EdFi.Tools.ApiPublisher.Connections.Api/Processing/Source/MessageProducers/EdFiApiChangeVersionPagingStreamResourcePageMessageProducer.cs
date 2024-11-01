@@ -73,6 +73,7 @@ public class EdFiApiChangeVersionPagingStreamResourcePageMessageProducer : IStre
 
             int changeVersionWindow = 0;
             long changeVersionWindowStartValue = message.ChangeWindow.MinChangeVersion;
+            long totalCount = 0;
 
             while (changeVersionWindow < noOfPartitions)
             {
@@ -103,6 +104,7 @@ public class EdFiApiChangeVersionPagingStreamResourcePageMessageProducer : IStre
                     continue;
                 }
 
+                totalCount += totalCountOnWindow;
                 int offsetOnWindow = 0;
                 while (offsetOnWindow < totalCountOnWindow)
                 {
@@ -130,6 +132,8 @@ public class EdFiApiChangeVersionPagingStreamResourcePageMessageProducer : IStre
 
             }
         // }
+
+        _logger.Information($"{message.ResourceUrl}: Total count = {totalCount}");
 
         // Flag the last page for special "continuation" processing
         if (pageMessages.Any())
