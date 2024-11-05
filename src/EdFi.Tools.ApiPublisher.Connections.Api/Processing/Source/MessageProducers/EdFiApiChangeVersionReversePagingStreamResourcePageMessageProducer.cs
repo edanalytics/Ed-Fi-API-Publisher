@@ -40,32 +40,15 @@ public class EdFiApiChangeVersionReversePagingStreamResourcePageMessageProducer 
             _logger.Information($"{message.ResourceUrl}: Retrieving total count of items.");
         }
 
-        // Get total count of items in source resource for change window (if applicable)
-        var (totalCountSuccess, totalCount) = await _sourceTotalCountProvider.TryGetTotalCountAsync(
-            message.ResourceUrl,
-            options,
-            message.ChangeWindow,
-            errorHandlingBlock,
-            cancellationToken);
-
-        if (!totalCountSuccess)
-        {
-            // Allow processing to continue without performing additional work on this resource.
-            return Enumerable.Empty<StreamResourcePageMessage<TProcessDataMessage>>();
-        }
-
-        _logger.Information($"{message.ResourceUrl}: Total count = {totalCount}");
 
         int limit = message.PageSize;
 
         var pageMessages = new List<StreamResourcePageMessage<TProcessDataMessage>>();
         
-        if (totalCount > 0)
-        {
             var noOfPartitions = Math.Ceiling((decimal)(message.ChangeWindow.MaxChangeVersion - message.ChangeWindow.MinChangeVersion)
                             / options.ChangeVersionPagingWindowSize);
             
-            // If totalCount > 0, there must be at least 1 partition.
+            // There must be at least 1 partition.
             if (noOfPartitions == 0)
             {
                 noOfPartitions = 1;
@@ -73,6 +56,7 @@ public class EdFiApiChangeVersionReversePagingStreamResourcePageMessageProducer 
 
             int changeVersionWindow = 0;
             long changeVersionWindowStartValue = message.ChangeWindow.MinChangeVersion;
+            long totalCount = 0;
 
             while (changeVersionWindow < noOfPartitions)
             {
@@ -103,6 +87,7 @@ public class EdFiApiChangeVersionReversePagingStreamResourcePageMessageProducer 
                     continue;
                 }
 
+                totalCount += totalCountOnWindow;
                 bool isLastOne = false;
                 long offsetOnWindow = totalCountOnWindow - limit;
                 if (offsetOnWindow < 0)
@@ -145,7 +130,8 @@ public class EdFiApiChangeVersionReversePagingStreamResourcePageMessageProducer 
                 changeVersionWindow++;
 
             }
-        }
+
+        _logger.Information($"{message.ResourceUrl}: Total count = {totalCount}");
 
         // Flag the last page for special "continuation" processing
         if (pageMessages.Any())
