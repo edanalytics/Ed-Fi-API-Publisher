@@ -180,6 +180,13 @@ namespace EdFi.Tools.ApiPublisher.Connections.Api.Processing.Target.Blocks
                         delay,
                         async (result, ts, retryAttempt, ctx) =>
                         {
+                            if (result.Exception != null)
+                            {
+                                _logger.Warning(
+                                    $"{postItemMessage.ResourceUrl} (source id: {id}): POST attempt #{attempts} failed with an exception. Retrying... (retry #{retryAttempt} of {options.MaxRetryAttempts} with {ts.TotalSeconds:N1}s delay):{Environment.NewLine}{result.Exception}");
+                            }
+                            else
+                            {
                             if (javaScriptModuleFactory != null)
                             {
                                 var remediationResult = await TryRemediateFailureAsync(
@@ -216,14 +223,6 @@ namespace EdFi.Tools.ApiPublisher.Connections.Api.Processing.Target.Blocks
                                     ctx["ModifiedRequestBody"] = remediationResult.ModifiedRequestBody;
                                 }
                             }
-
-                            if (result.Exception != null)
-                            {
-                                _logger.Warning(
-                                    $"{postItemMessage.ResourceUrl} (source id: {id}): POST attempt #{attempts} failed with an exception. Retrying... (retry #{retryAttempt} of {options.MaxRetryAttempts} with {ts.TotalSeconds:N1}s delay):{Environment.NewLine}{result.Exception}");
-                            }
-                            else
-                            {
                                 string responseContent = await result.Result.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                                 _logger.Warning(
