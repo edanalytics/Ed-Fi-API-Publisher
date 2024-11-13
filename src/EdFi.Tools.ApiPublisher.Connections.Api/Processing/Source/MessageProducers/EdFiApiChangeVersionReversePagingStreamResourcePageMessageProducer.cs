@@ -57,6 +57,7 @@ public class EdFiApiChangeVersionReversePagingStreamResourcePageMessageProducer 
             int changeVersionWindow = 0;
             long changeVersionWindowStartValue = message.ChangeWindow.MinChangeVersion;
             long totalCount = 0;
+            bool totalCountSuccess = true;
 
             while (changeVersionWindow < noOfPartitions)
             {
@@ -84,7 +85,11 @@ public class EdFiApiChangeVersionReversePagingStreamResourcePageMessageProducer 
 
                 if (!totalCountOnWindowSuccess)
                 {
-                    continue;
+                    // If total count fails for any window, fail the whole thing.
+                    totalCount = 0;
+                    totalCountSuccess = false;
+                    pageMessages.Clear();
+                    break;
                 }
 
                 totalCount += totalCountOnWindow;
@@ -131,7 +136,10 @@ public class EdFiApiChangeVersionReversePagingStreamResourcePageMessageProducer 
 
             }
 
-        _logger.Information($"{message.ResourceUrl}: Total count = {totalCount}");
+        if (totalCountSuccess) 
+        {
+            _logger.Information($"{message.ResourceUrl}: Total count = {totalCount}");
+        }
 
         // Flag the last page for special "continuation" processing
         if (pageMessages.Any())
