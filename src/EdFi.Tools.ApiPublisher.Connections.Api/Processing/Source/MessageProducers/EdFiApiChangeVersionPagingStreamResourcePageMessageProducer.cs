@@ -59,7 +59,6 @@ public class EdFiApiChangeVersionPagingStreamResourcePageMessageProducer : IStre
             int changeVersionWindow = 0;
             long changeVersionWindowStartValue = message.ChangeWindow.MinChangeVersion;
             long totalCount = 0;
-            bool totalCountSuccess = true;
 
             while (changeVersionWindow < noOfPartitions)
             {
@@ -87,11 +86,7 @@ public class EdFiApiChangeVersionPagingStreamResourcePageMessageProducer : IStre
 
                 if (!totalCountOnWindowSuccess)
                 {
-                    // If total count fails for any window, fail the whole thing.
-                    totalCount = 0;
-                    totalCountSuccess = false;
-                    pageMessages.clear();
-                    break;
+                    continue;
                 }
 
                 totalCount += totalCountOnWindow;
@@ -122,10 +117,7 @@ public class EdFiApiChangeVersionPagingStreamResourcePageMessageProducer : IStre
 
             }
 
-        if (totalCountSuccess) 
-        {
-            _logger.Information($"{message.ResourceUrl}: Total count = {totalCount}");
-        }
+        _logger.Information($"{message.ResourceUrl}: Total count = {totalCount}");
 
         // Flag the last page for special "continuation" processing
         if (pageMessages.Any())
