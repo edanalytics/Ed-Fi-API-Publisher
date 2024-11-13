@@ -84,7 +84,8 @@ public class EdFiApiChangeVersionReversePagingStreamResourcePageMessageProducer 
 
                 if (!totalCountOnWindowSuccess)
                 {
-                    continue;
+                    // Allow processing to continue without performing additional work on this resource.
+                    return Enumerable.Empty<StreamResourcePageMessage<TProcessDataMessage>>();
                 }
 
                 totalCount += totalCountOnWindow;
