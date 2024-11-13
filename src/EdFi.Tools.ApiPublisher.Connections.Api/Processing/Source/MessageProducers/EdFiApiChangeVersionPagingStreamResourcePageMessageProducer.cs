@@ -90,7 +90,7 @@ public class EdFiApiChangeVersionPagingStreamResourcePageMessageProducer : IStre
                     // If total count fails for any window, fail the whole thing.
                     totalCount = 0;
                     totalCountSuccess = false;
-                    pageMessages.Clear();
+                    pageMessages.clear();
                     break;
                 }
 
