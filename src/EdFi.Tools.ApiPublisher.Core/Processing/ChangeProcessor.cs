@@ -620,7 +620,7 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing
             {
                 return _sourceConnectionDetails.LastChangeVersionProcessed.Value;
             }
-
+            
             // Fall back to using the pre-configured change version
             return _sourceConnectionDetails
                 .LastChangeVersionProcessedByTargetName
