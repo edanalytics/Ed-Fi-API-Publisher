@@ -53,7 +53,7 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing
         private readonly IIndex<PublishingStage, IPublishingStageInitiator> _publishingStageInitiatorByStage;
         private readonly IFinalizationActivity[] _finalizationActivities;
 
-        private string _jobName;
+        private string _lcvpTargetName;
 
         public ChangeProcessor(
             IResourceDependencyProvider resourceDependencyProvider,
@@ -93,11 +93,6 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing
             var javascriptModuleFactory = configuration.JavascriptModuleFactory;
 
             _logger.Debug($"Options for processing:{Environment.NewLine}{JsonConvert.SerializeObject(options, Formatting.Indented)}");
-            
-            if (!string.IsNullOrEmpty(options.JobName))
-            {
-                _jobName = options.JobName;
-            }
 
             try
             {
@@ -120,13 +115,19 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing
                     && !string.IsNullOrWhiteSpace(_targetConnectionDetails.Name))
                     || options.UseChangeVersionPaging)
                 {
+                    _lcvpTargetName = _targetConnectionDetails.Name;
+                    if (!string.IsNullOrEmpty(options.JobName))
+                    {
+                        _lcvpTargetName = $"{options.JobName}:{_targetConnectionDetails.Name}";
+                    }
+
                     changeWindow = await EstablishChangeWindowAsync().ConfigureAwait(false);
                 }
 
                 // Have all changes already been processed?
                 if (changeWindow?.MinChangeVersion > changeWindow?.MaxChangeVersion)
                 {
-                    _logger.Information($"Last change version processed of '{GetLastChangeVersionProcessed()}' for target '{_targetConnectionDetails.Name}' indicates that all available changes have already been published.");
+                    _logger.Information($"Last change version processed of '{GetLastChangeVersionProcessed()}' for target '{_lcvpTargetName}' indicates that all available changes have already been published.");
                     return;
                 }
 
@@ -229,11 +230,6 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing
             if (!string.IsNullOrEmpty(sourceDetails.Name)
                 && !string.IsNullOrEmpty(sinkDetails.Name))
             {
-                if (!string.IsNullOrEmpty(_jobName))
-                {
-                    sinkDetails.Name = $"{_jobName}:{_targetConnectionDetails.Name}";
-                }
-
                 if (changeWindow == null)
                 {
                     _logger.Warning(
@@ -242,12 +238,12 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing
                 else if (GetLastChangeVersionProcessed() != changeWindow.MaxChangeVersion)
                 {
                     _logger.Information(
-                        $"Updating last processed change version from '{GetLastChangeVersionProcessed()}' to '{changeWindow.MaxChangeVersion}' for target connection '{sinkDetails.Name}'.");
+                        $"Updating last processed change version from '{GetLastChangeVersionProcessed()}' to '{changeWindow.MaxChangeVersion}' for target connection '{_lcvpTargetName}'.");
 
                     // Record the successful completion of the change window
                     await _changeVersionProcessedWriter.SetProcessedChangeVersionAsync(
                         sourceDetails.Name,
-                        sinkDetails.Name,
+                        _lcvpTargetName,
                         changeWindow.MaxChangeVersion,
                         configurationStoreSection)
                         .ConfigureAwait(false);
@@ -624,19 +620,11 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing
             {
                 return _sourceConnectionDetails.LastChangeVersionProcessed.Value;
             }
-            
-            // If job name was provided, use that next
-            if (!string.IsNullOrEmpty(_jobName))
-            {
-                return _sourceConnectionDetails
-                    .LastChangeVersionProcessedByTargetName
-                    .GetValueOrDefault($"{_jobName}:{_targetConnectionDetails.Name}");
-            }
 
             // Fall back to using the pre-configured change version
             return _sourceConnectionDetails
                 .LastChangeVersionProcessedByTargetName
-                .GetValueOrDefault(_targetConnectionDetails.Name);
+                .GetValueOrDefault(_lcvpTargetName);
         }
 
         private TaskStatus[] ProcessUpsertsToCompletion(
