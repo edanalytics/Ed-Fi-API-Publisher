@@ -225,7 +225,7 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing
             var sinkDetails = _targetConnectionDetails;
             
             var configurationStoreSection = configuration.ConfigurationStoreSection;
-                        
+            
             // If we have a name for source and target connections, write the change version
             if (!string.IsNullOrEmpty(sourceDetails.Name)
                 && !string.IsNullOrEmpty(sinkDetails.Name))
@@ -620,7 +620,7 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing
             {
                 return _sourceConnectionDetails.LastChangeVersionProcessed.Value;
             }
-
+            
             // Fall back to using the pre-configured change version
             return _sourceConnectionDetails
                 .LastChangeVersionProcessedByTargetName
