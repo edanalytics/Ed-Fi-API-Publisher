@@ -53,6 +53,8 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing
         private readonly IIndex<PublishingStage, IPublishingStageInitiator> _publishingStageInitiatorByStage;
         private readonly IFinalizationActivity[] _finalizationActivities;
 
+        private string _jobName;
+
         public ChangeProcessor(
             IResourceDependencyProvider resourceDependencyProvider,
             IChangeVersionProcessedWriter changeVersionProcessedWriter,
@@ -91,6 +93,11 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing
             var javascriptModuleFactory = configuration.JavascriptModuleFactory;
 
             _logger.Debug($"Options for processing:{Environment.NewLine}{JsonConvert.SerializeObject(options, Formatting.Indented)}");
+            
+            if (!string.IsNullOrEmpty(options.JobName))
+            {
+                _jobName = options.JobName;
+            }
 
             try
             {
@@ -217,11 +224,16 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing
             var sinkDetails = _targetConnectionDetails;
             
             var configurationStoreSection = configuration.ConfigurationStoreSection;
-            
+                        
             // If we have a name for source and target connections, write the change version
             if (!string.IsNullOrEmpty(sourceDetails.Name)
                 && !string.IsNullOrEmpty(sinkDetails.Name))
             {
+                if (!string.IsNullOrEmpty(_jobName))
+                {
+                    sinkDetails.Name = $"{_jobName}:{_targetConnectionDetails.Name}";
+                }
+
                 if (changeWindow == null)
                 {
                     _logger.Warning(
@@ -613,6 +625,14 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing
                 return _sourceConnectionDetails.LastChangeVersionProcessed.Value;
             }
             
+            // If job name was provided, use that next
+            if (!string.IsNullOrEmpty(_jobName))
+            {
+                return _sourceConnectionDetails
+                    .LastChangeVersionProcessedByTargetName
+                    .GetValueOrDefault($"{_jobName}:{_targetConnectionDetails.Name}");
+            }
+
             // Fall back to using the pre-configured change version
             return _sourceConnectionDetails
                 .LastChangeVersionProcessedByTargetName
