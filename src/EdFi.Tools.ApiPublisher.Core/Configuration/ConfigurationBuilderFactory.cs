@@ -77,7 +77,7 @@ namespace EdFi.Tools.ApiPublisher.Core.Configuration
                     ["--rateLimitTimeSeconds"] = "Options:RateLimitTimeSeconds",
                     ["--rateLimitMaxRetries"] = "Options:RateLimitMaxRetries",
                     ["--useReversePaging"] = "Options:UseReversePaging",
-                    ["--jobName"] = "Options:JobName",
+                    ["--lastChangeVersionProcessedNamespace"] = "Options:LastChangeVersionProcessedNamespace",
 
 
                     // Resource selection (comma delimited paths - e.g. "/ed-fi/students,/ed-fi/studentSchoolAssociations")

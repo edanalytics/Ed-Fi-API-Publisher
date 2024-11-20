@@ -116,9 +116,9 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing
                     || options.UseChangeVersionPaging)
                 {
                     _lcvpTargetName = _targetConnectionDetails.Name;
-                    if (!string.IsNullOrEmpty(options.JobName))
+                    if (!string.IsNullOrEmpty(options.LastChangeVersionProcessedNamespace))
                     {
-                        _lcvpTargetName = $"{options.JobName}:{_targetConnectionDetails.Name}";
+                        _lcvpTargetName = $"{options.LastChangeVersionProcessedNamespace}:{_targetConnectionDetails.Name}";
                     }
 
                     changeWindow = await EstablishChangeWindowAsync().ConfigureAwait(false);
@@ -620,7 +620,7 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing
             {
                 return _sourceConnectionDetails.LastChangeVersionProcessed.Value;
             }
-            
+
             // Fall back to using the pre-configured change version
             return _sourceConnectionDetails
                 .LastChangeVersionProcessedByTargetName

@@ -99,6 +99,6 @@ namespace EdFi.Tools.ApiPublisher.Core.Configuration
 
         public bool UseReversePaging { get; set; } = false;
 
-        public string JobName { get; set; }
+        public string LastChangeVersionProcessedNamespace { get; set; }
     }
 }
