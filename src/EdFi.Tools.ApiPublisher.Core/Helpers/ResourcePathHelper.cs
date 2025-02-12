@@ -74,7 +74,7 @@ namespace EdFi.Tools.ApiPublisher.Core.Helpers
                     }
                     else
                     {
-                        throw new Exception($"Invalid resource page size name format used for '{pair}'. Expected format is '<string>:<int>' '{{resource}}:{{page_size}}', with the resource name pluralized.");
+                        throw new Exception($"Invalid resource page size format used for '{pair}'. Expected format is '<string>:<int>' '{{resource}}:{{pageSize}}', with the resource name pluralized.");
                     }
                 }
             }
