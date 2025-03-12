@@ -176,6 +176,19 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing
                     cancellationToken)
                     .ConfigureAwait(false);
 
+                // Process all the "Upserts" again to work around schrodingers resources issue
+                TaskStatus[] repostTaskStatuses = null;
+                if (options.AdditionalUpsertAfterDelete) {
+                    repostTaskStatuses = ProcessUpsertsToCompletion(
+                        dependencyKeysByResourceKey, 
+                        options,
+                        authorizationFailureHandling,
+                        changeWindow, 
+                        publishErrorsIngestionBlock,
+                        javascriptModuleFactory,
+                        cancellationToken);
+                }
+
                 // Indicate to the error handling that we're done feeding it errors.
                 publishErrorsIngestionBlock.Complete();
                 
@@ -183,7 +196,7 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing
                 _logger.Debug($"Waiting for all errors to be published.");
                 publishErrorsCompletionBlock.Completion.Wait();
 
-                EnsureProcessingWasSuccessful(keyChangesTaskStatuses, postTaskStatuses, deleteTaskStatuses);
+                EnsureProcessingWasSuccessful(keyChangesTaskStatuses, postTaskStatuses, deleteTaskStatuses, repostTaskStatuses);
 
                 // Perform processing finalization activities
                 var finalizationTasks = _finalizationActivities.Select(f => f.Execute()).ToArray();
@@ -913,7 +926,8 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing
         private void EnsureProcessingWasSuccessful(
             TaskStatus[] keyChangeTaskStatuses,
             TaskStatus[] postTaskStatuses,
-            TaskStatus[] deleteTaskStatuses)
+            TaskStatus[] deleteTaskStatuses,
+            TaskStatus[] repostTaskStatuses)
         {
             bool success = true;
             
@@ -947,6 +961,16 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing
             {
                 success = false;
                 _logger.Error($"{nonCompletedDeleteTaskCount} resource delete tasks did not run to completion successfully -- last change version processed will not be updated for this connection.");
+            }
+
+            if (repostTaskStatuses != null){
+                var nonCompletedRepostTaskCount = repostTaskStatuses.Count(s => s != TaskStatus.RanToCompletion);
+
+                if (nonCompletedRepostTaskCount > 0)
+                {
+                    success = false;
+                    _logger.Error($"{nonCompletedRepostTaskCount} resource re-upsert tasks did not run to completion successfully -- last change version processed will not be updated for this connection.");
+                }
             }
 
             if (!success)
