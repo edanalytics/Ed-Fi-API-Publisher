@@ -913,7 +913,7 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing
                 i++;
             }
 
-            if (i == infiniteLoopProtectionThreshold)
+            if (i == infiniteLoopProtectionThreshold && i != 1)
             {
                 // This should never happen
                 throw new Exception(
