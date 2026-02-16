@@ -79,6 +79,7 @@ namespace EdFi.Tools.ApiPublisher.Core.Configuration
                     ["--useReversePaging"] = "Options:UseReversePaging",
                     ["--lastChangeVersionProcessedNamespace"] = "Options:LastChangeVersionProcessedNamespace",
                     ["--additionalUpsertAfterDelete"] = "Options:AdditionalUpsertAfterDelete",
+                    ["--processDeletesAndKeyChangesOnFullPublish"] = "Options:ProcessDeletesAndKeyChangesOnFullPublish",
 
                     // Resource selection (comma delimited paths - e.g. "/ed-fi/students,/ed-fi/studentSchoolAssociations")
                     ["--include"] = "Connections:Source:Include",
