@@ -16,6 +16,7 @@ namespace EdFi.Tools.ApiPublisher.Core.Extensions
                 case HttpStatusCode.InternalServerError:
                 case HttpStatusCode.GatewayTimeout:
                 case HttpStatusCode.ServiceUnavailable:
+                case HttpStatusCode.TooManyRequests:
                     return true;
                 default:
                     return false;
