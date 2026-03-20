@@ -175,12 +175,44 @@ namespace EdFi.Tools.ApiPublisher.Connections.Api.Processing.Target.Blocks
                             return Enumerable.Empty<DeleteItemMessage>();
                         }
 
+                        // Check if any query parameter is 0.  If yes, perforform fuzzy match item selection.  If not, select the first item in the response list.
+                        bool hasZero = msg.KeyValues.OfType<JProperty>().Any(p =>
+                            (p.Value.Type == JTokenType.Integer || p.Value.Type == JTokenType.Float) &&
+                            (long)p.Value == 0);
+
+                        JObject matchingResult = null;
+
+                        if (hasZero)
+                        {
+                            _logger.Warning("{ResourceUrl} (source id: {Id}): GET by key for deletion query included a 0 value.", msg.ResourceUrl, msg.Id);
+                            // Find a result that matches the msg query...
+                            matchingResult = getByKeyResults
+                                .OfType<JObject>()
+                                .FirstOrDefault(item => MatchesQuery(item, msg));
+
+                            if (matchingResult == null)
+                            {
+                                _logger.Warning("{ResourceUrl} (source id: {Id}): GET by key for deletion returned {Count} results on target API, and none matched. ({QueryString})", msg.ResourceUrl, msg.Id, getByKeyResults.Count, queryString);
+
+                                return Enumerable.Empty<DeleteItemMessage>();
+                            }
+
+                            // Log the query string and selected id.
+                            _logger.Warning("{ResourceUrl} (source id: {Id}): GET by key for deletion returned {Count} results on target API. ({QueryString})", msg.ResourceUrl, msg.Id, getByKeyResults.Count, queryString);
+                            _logger.Warning("{ResourceUrl} (source id: {Id}): GET by key for deletion selected {MatchingResultIdValue} to be deleted. ({MatchingResult})", msg.ResourceUrl, msg.Id, matchingResult["id"].Value<string>(), matchingResult.ToString());
+
+                        }
+                        else
+                        {
+                            matchingResult = getByKeyResults[0] as JObject;
+                        }
+
                         return new[]
                         {
                             new DeleteItemMessage
                             {
                                 ResourceUrl = msg.ResourceUrl,
-                                Id = getByKeyResults[0]["id"].Value<string>(),
+                                Id = matchingResult["id"].Value<string>(),
                                 SourceId = msg.Id,
                             }
                         };
@@ -225,6 +257,41 @@ namespace EdFi.Tools.ApiPublisher.Connections.Api.Processing.Target.Blocks
                         return property.Value.ToString();
                 }
             }
+        }
+
+        // Function to compare a returned item with expected values
+        private static bool MatchesQuery(JObject item, GetItemForDeletionMessage msg)
+        {
+            // Get all properties from the item that are strings or numbers
+            List<JProperty> ItemProperties = GetStringOrNumberProperties(item);
+
+            // Test that all properties from the query message are found in the item
+            bool allExist = msg.KeyValues.OfType<JProperty>().All(jp1 =>
+                ItemProperties.Any(jp2 => jp1.Name == jp2.Name && JToken.DeepEquals(jp1.Value, jp2.Value)));
+
+            return allExist;
+        }
+
+        private static List<JProperty> GetStringOrNumberProperties(JObject jObject)
+        {
+            List<JProperty> result = new List<JProperty>();
+
+            foreach (var property in jObject.Properties())
+            {
+                // Check the type of the value
+                if (property.Value.Type == JTokenType.String || property.Value.Type == JTokenType.Integer || property.Value.Type == JTokenType.Float)
+                {
+                    result.Add(property);
+                }
+                else if (property.Value.Type == JTokenType.Object)
+                {
+                    // Recursively process nested JObjects
+                    result.AddRange(GetStringOrNumberProperties((JObject)property.Value));
+                }
+                // Skip arrays and other types
+            }
+
+            return result;
         }
 
         private TransformManyBlock<DeleteItemMessage, ErrorItemMessage> CreateDeleteResourceBlock(
