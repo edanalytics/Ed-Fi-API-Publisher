@@ -45,8 +45,7 @@ public class EdFiApiVersionMetadataProviderBase
             try
             {
                 versionObject = JObject.Parse(versionJson);
-                var message = $"{_role} version information: {versionObject.ToString(Formatting.Indented)}";
-                _logger.Information(message);
+                _logger.Information("{@_Role} version information: {@VersionObject}", _role, versionObject);
             }
             catch (Exception)
             {
