@@ -102,5 +102,7 @@ namespace EdFi.Tools.ApiPublisher.Core.Configuration
         public string LastChangeVersionProcessedNamespace { get; set; }
 
         public bool AdditionalUpsertAfterDelete { get; set; } = false;
+
+        public bool ProcessDeletesAndKeyChangesOnFullPublish { get; set; } = false;
     }
 }
