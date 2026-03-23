@@ -11,7 +11,7 @@
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="10.0.0" />
     <PackageReference Include="AWSSDK.CloudWatchLogs" Version="4.0.15.3" />
     <PackageReference Include="AWSSDK.Core" Version="4.0.3.20" />
-    <!-- <PackageReference Include="Destructurama.JsonNet" Version="3.0.0" /> -->
+    <PackageReference Include="Destructurama.JsonNet" Version="3.0.0" />
     <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
     <PackageReference Include="Serilog.Expressions" Version="4.0.0" />
     <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
