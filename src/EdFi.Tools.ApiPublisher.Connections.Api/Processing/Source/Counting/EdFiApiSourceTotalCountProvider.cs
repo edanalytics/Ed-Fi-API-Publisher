@@ -53,11 +53,20 @@ public class EdFiApiSourceTotalCountProvider : ISourceTotalCountProvider
         bool isRateLimitingEnabled = options.EnableRateLimit;
  
         var retryPolicy = Policy
-            .HandleResult<HttpResponseMessage>(r => r.StatusCode.IsPotentiallyTransientFailure())
+            .Handle<Exception>()
+            .OrResult<HttpResponseMessage>(r => r.StatusCode.IsPotentiallyTransientFailure())
             .WaitAndRetryAsync(delay, (result, ts, retryAttempt, ctx) =>
             {
-                _logger.Warning(
-                    $"{resourceUrl}: Getting item count from source failed with status '{result.Result.StatusCode}'. Retrying... (retry #{retryAttempt} of {options.MaxRetryAttempts} with {ts.TotalSeconds:N1}s delay)");
+                if (result.Exception != null)
+                {
+                    _logger.Warning(
+                        $"{resourceUrl}: Getting item count from source failed with an exception. Retrying... (retry #{retryAttempt} of {options.MaxRetryAttempts} with {ts.TotalSeconds:N1}s delay):{Environment.NewLine}{result.Exception}");
+                }
+                else
+                {
+                    _logger.Warning(
+                        $"{resourceUrl}: Getting item count from source failed with status '{result.Result.StatusCode}'. Retrying... (retry #{retryAttempt} of {options.MaxRetryAttempts} with {ts.TotalSeconds:N1}s delay)");
+                }
             });
         IAsyncPolicy<HttpResponseMessage> policy = isRateLimitingEnabled ? Policy.WrapAsync(_rateLimiter?.GetRateLimitingPolicy(), retryPolicy) : retryPolicy;
         try
