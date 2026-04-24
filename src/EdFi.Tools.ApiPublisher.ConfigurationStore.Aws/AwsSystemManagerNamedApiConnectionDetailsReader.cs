@@ -21,14 +21,8 @@ namespace EdFi.Tools.ApiPublisher.ConfigurationStore.Aws
             var config = new ConfigurationBuilder()
                 .AddSystemsManager(ConfigurationStoreHelper.Key(apiConnectionName), awsOptions)
                 .Build();
-            
-            // Read the connection details from the configuration values
-            var connectionDetails = config.Get<ApiConnectionDetails>();
 
-            // Assign the connection name
-            connectionDetails.Name = apiConnectionName;
-            
-            return connectionDetails;
+            return AwsParameterStoreConnectionDetailsBuilder.Build(config, apiConnectionName);
         }
     }
 }
