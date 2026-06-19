@@ -73,6 +73,8 @@ namespace EdFi.Tools.ApiPublisher.Core.Configuration
 
         public int StreamingPageSize { get; set; } = 75;
 
+        public string StreamingPageSizeResourceOverrides { get; set; } = "";
+
         public bool IncludeDescriptors { get; set; } = false;
 
         public bool WhatIf { get; set; } = false;

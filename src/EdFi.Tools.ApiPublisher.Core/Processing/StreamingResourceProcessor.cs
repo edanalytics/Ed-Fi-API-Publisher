@@ -111,6 +111,8 @@ public class StreamingResourceProcessor : IStreamingResourceProcessor
 
         var cancellationSource = new CancellationTokenSource();
 
+        Dictionary<string, int> resourcePageSize = ResourcePathHelper.ParseResourcePageSizeCsvToDictionary(processingContext.Options.StreamingPageSizeResourceOverrides);
+
         // Initiate streaming of all resources, with dependencies
         foreach (var kvp in processingContext.DependencyKeysByResourceKey)
         {
@@ -142,7 +144,7 @@ public class StreamingResourceProcessor : IStreamingResourceProcessor
                 ShouldSkip = skippedResources.Contains(resourcePath),
                 Dependencies = dependencyPaths.Select(p => streamingPagesByResourceKey[p].CompletionBlock.Completion).ToArray(),
                 DependencyPaths = dependencyPaths.ToArray(),
-                PageSize = processingContext.Options.StreamingPageSize,
+                PageSize = resourcePageSize.TryGetValue(resourceUrl, out int pageSize) ? pageSize : processingContext.Options.StreamingPageSize,
                 ChangeWindow = processingContext.ChangeWindow,
                 CancellationSource = cancellationSource,
                 PostAuthorizationFailureRetry = postRetry,

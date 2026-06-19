@@ -5,6 +5,7 @@
 
 using System;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace EdFi.Tools.ApiPublisher.Core.Helpers
 {
@@ -55,6 +56,29 @@ namespace EdFi.Tools.ApiPublisher.Core.Helpers
         public static bool IsDescriptor(string resourceUrl)
         {
             return resourceUrl.Split('?')[0].EndsWith("Descriptors");
+        }
+
+        public static Dictionary<string, int> ParseResourcePageSizeCsvToDictionary(string resourcePageSizeCsv)
+        {
+            var result = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            if (!string.IsNullOrWhiteSpace(resourcePageSizeCsv))
+            {
+                foreach (var pair in ParseResourcesCsvToResourcePathArray(resourcePageSizeCsv))
+                {
+                    var parts = pair.Split(':');
+                    if (parts.Length == 2 && int.TryParse(parts[1].Trim(), out int size))
+                    {
+                        result[parts[0].Trim()] = size;
+                        result[parts[0].Trim() + "/deletes"] = size;
+                        result[parts[0].Trim() + "/keyChanges"] = size;
+                    }
+                    else
+                    {
+                        throw new Exception($"Invalid resource page size format used for '{pair}'. Expected format is '<string>:<int>' '{{resource}}:{{pageSize}}', with the resource name pluralized.");
+                    }
+                }
+            }
+            return result;
         }
     }
 }
