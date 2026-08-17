@@ -101,7 +101,14 @@ public class EdFiApiAsSourceModule : Module
                 .SingleInstance();
             }
         }
-        // Register resource page message producer using a limit/offset paging strategy
+        // Register resource page message producer using cursor or limit/offset paging
+        else if (options.UseCursorPaging)
+        {
+            builder.RegisterType<EdFiApiCursorPagingStreamResourcePageMessageProducer>()
+                .As<IStreamResourcePageMessageProducer>()
+                .WithParameter("rateLimiter", rateLimiter)
+                .SingleInstance();
+        }
         else
         {
             builder.RegisterType<EdFiApiLimitOffsetPagingStreamResourcePageMessageProducer>()

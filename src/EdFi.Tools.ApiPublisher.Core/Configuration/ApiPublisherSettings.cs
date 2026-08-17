@@ -99,6 +99,21 @@ namespace EdFi.Tools.ApiPublisher.Core.Configuration
 
         public bool UseReversePaging { get; set; } = false;
 
+        /// <summary>
+        /// When true (and <see cref="UseChangeVersionPaging"/> is false), stream source resources using Ed-Fi cursor paging
+        /// (pageToken / pageSize and Next-Page-Token) instead of limit/offset. Does not call totalCount for streaming.
+        /// Incompatible with <see cref="UseChangeVersionPaging"/>; change-version mode takes precedence in configuration.
+        /// See https://docs.ed-fi.org/reference/ods-api/client-developers-guide/improve-paging-performance-cursor-paging/
+        /// </summary>
+        public bool UseCursorPaging { get; set; }
+
+        /// <summary>
+        /// When greater than zero and <see cref="UseCursorPaging"/> is true, calls the resource /partitions endpoint
+        /// to obtain starting page tokens for parallel workers. On failure or empty response, falls back to a single
+        /// cursor stream without partitions.
+        /// </summary>
+        public int CursorPartitionCount { get; set; }
+
         public string LastChangeVersionProcessedNamespace { get; set; }
 
         public bool AdditionalUpsertAfterDelete { get; set; } = false;

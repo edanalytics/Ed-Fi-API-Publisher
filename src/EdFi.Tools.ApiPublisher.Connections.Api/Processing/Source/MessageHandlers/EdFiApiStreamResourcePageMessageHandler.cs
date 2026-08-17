@@ -42,6 +42,209 @@ public class EdFiApiStreamResourcePageMessageHandler : IStreamResourcePageMessag
         Options options,
         ITargetBlock<ErrorItemMessage> errorHandlingBlock)
     {
+        if (options.UseCursorPaging)
+        {
+            return await HandleCursorPagingAsync(message, options, errorHandlingBlock).ConfigureAwait(false);
+        }
+
+        return await HandleOffsetLimitPagingAsync(message, options, errorHandlingBlock).ConfigureAwait(false);
+    }
+
+    private async Task<IEnumerable<TProcessDataMessage>> HandleCursorPagingAsync<TProcessDataMessage>(
+        StreamResourcePageMessage<TProcessDataMessage> message,
+        Options options,
+        ITargetBlock<ErrorItemMessage> errorHandlingBlock)
+    {
+        var edFiApiClient = _sourceEdFiApiClientProvider.GetApiClient();
+        string changeWindowQueryStringParameters = ApiRequestHelper.GetChangeWindowQueryStringParameters(message.ChangeWindow);
+        int pageSize = options.StreamingPageSize;
+        string pageToken = message.CursorStartPageToken;
+
+        try
+        {
+            var transformedMessages = new List<TProcessDataMessage>();
+
+            while (true)
+            {
+                if (message.CancellationSource.IsCancellationRequested)
+                {
+                    _logger.Debug($"{message.ResourceUrl}: Cancellation requested while processing cursor page.");
+
+                    return Enumerable.Empty<TProcessDataMessage>();
+                }
+
+                if (_logger.IsEnabled(LogEventLevel.Debug))
+                {
+                    _logger.Debug(
+                        pageToken == null
+                            ? $"{message.ResourceUrl}: Retrieving first cursor page (pageSize={pageSize})."
+                            : $"{message.ResourceUrl}: Retrieving cursor page with pageToken (pageSize={pageSize}).");
+                }
+
+                var delay = Backoff.ExponentialBackoff(
+                    TimeSpan.FromMilliseconds(options.RetryStartingDelayMilliseconds),
+                    options.MaxRetryAttempts);
+
+                int attempts = 0;
+                bool isRateLimitingEnabled = options.EnableRateLimit;
+
+                var retryPolicy = Policy
+                    .Handle<Exception>()
+                    .OrResult<HttpResponseMessage>(r => r.StatusCode.IsPotentiallyTransientFailure())
+                    .WaitAndRetryAsync(
+                        delay,
+                        (result, ts, retryAttempt, ctx) =>
+                        {
+                            if (result.Exception != null)
+                            {
+                                _logger.Warning(
+                                    $"{message.ResourceUrl}: Retrying cursor GET from source failed with an exception. Retrying... (retry #{retryAttempt} of {options.MaxRetryAttempts} with {ts.TotalSeconds:N1}s delay):{Environment.NewLine}{result.Exception}");
+                            }
+                            else
+                            {
+                                _logger.Warning(
+                                    $"{message.ResourceUrl}: Retrying cursor GET from source failed with status '{result.Result.StatusCode}'. Retrying... (retry #{retryAttempt} of {options.MaxRetryAttempts} with {ts.TotalSeconds:N1}s delay)");
+                            }
+                        });
+
+                IAsyncPolicy<HttpResponseMessage> policy =
+                    isRateLimitingEnabled ? Policy.WrapAsync(_rateLimiter?.GetRateLimitingPolicy(), retryPolicy) : retryPolicy;
+
+                HttpResponseMessage apiResponse;
+
+                try
+                {
+                    apiResponse = await policy.ExecuteAsync(
+                            (ctx, ct) =>
+                            {
+                                attempts++;
+
+                                if (attempts > 1 && _logger.IsEnabled(LogEventLevel.Debug))
+                                {
+                                    _logger.Debug($"{message.ResourceUrl}: Cursor GET attempt #{attempts}.");
+                                }
+
+                                string query = $"?pageSize={pageSize}";
+
+                                if (!string.IsNullOrEmpty(pageToken))
+                                {
+                                    query += $"&pageToken={Uri.EscapeDataString(pageToken)}";
+                                }
+
+                                query += changeWindowQueryStringParameters;
+
+                                string requestUri = $"{edFiApiClient.DataManagementApiSegment}{message.ResourceUrl}{query}";
+
+                                return RequestHelpers.SendGetRequestAsync(edFiApiClient, message.ResourceUrl, requestUri, ct);
+                            },
+                            new Context(),
+                            CancellationToken.None)
+                        .ConfigureAwait(false);
+                }
+                catch (RateLimitRejectedException)
+                {
+                    _logger.Fatal($"{message.ResourceUrl}: Rate limit exceeded. Please try again later.");
+
+                    return transformedMessages;
+                }
+
+                if (apiResponse.Content == null)
+                {
+                    throw new NullReferenceException(
+                        $"Content of response for cursor GET to '{edFiApiClient.HttpClient.BaseAddress}{edFiApiClient.DataManagementApiSegment}{message.ResourceUrl}' was null.");
+                }
+
+                string responseContent = await apiResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                if (!apiResponse.IsSuccessStatusCode)
+                {
+                    var error = new ErrorItemMessage
+                    {
+                        Method = HttpMethod.Get.ToString(),
+                        ResourceUrl = $"{edFiApiClient.DataManagementApiSegment}{message.ResourceUrl}",
+                        Id = null,
+                        Body = null,
+                        ResponseStatus = apiResponse.StatusCode,
+                        ResponseContent = responseContent
+                    };
+
+                    errorHandlingBlock.Post(error);
+
+                    _logger.Error($"{message.ResourceUrl}: Cursor GET failed with response status '{apiResponse.StatusCode}'.");
+
+                    break;
+                }
+
+                if (_logger.IsEnabled(LogEventLevel.Information) && attempts > 1)
+                {
+                    _logger.Information(
+                        $"{message.ResourceUrl}: Cursor GET attempt #{attempts} returned {apiResponse.StatusCode}.");
+                }
+
+                try
+                {
+                    transformedMessages.AddRange(message.CreateProcessDataMessages(message, responseContent));
+                }
+                catch (JsonReaderException ex)
+                {
+                    var error = new ErrorItemMessage
+                    {
+                        Method = HttpMethod.Get.ToString(),
+                        ResourceUrl = $"{edFiApiClient.DataManagementApiSegment}{message.ResourceUrl}",
+                        Id = null,
+                        Body = null,
+                        ResponseStatus = apiResponse.StatusCode,
+                        ResponseContent = responseContent,
+                        Exception = ex,
+                    };
+
+                    errorHandlingBlock.Post(error);
+
+                    _logger.Error(
+                        $"{message.ResourceUrl}: JSON parsing of source page data failed: {ex}{Environment.NewLine}{responseContent}");
+
+                    break;
+                }
+
+                string nextPageToken = null;
+
+                if (apiResponse.Headers.TryGetValues("Next-Page-Token", out var headerValues))
+                {
+                    nextPageToken = headerValues.FirstOrDefault(v => !string.IsNullOrEmpty(v));
+                }
+
+                if (string.IsNullOrEmpty(nextPageToken))
+                {
+                    break;
+                }
+
+                pageToken = nextPageToken;
+            }
+
+            return transformedMessages;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"{message.ResourceUrl}: {ex}");
+
+            var error = new ErrorItemMessage
+            {
+                Method = HttpMethod.Get.ToString(),
+                ResourceUrl = $"{edFiApiClient.DataManagementApiSegment}{message.ResourceUrl}",
+                Exception = ex,
+            };
+
+            errorHandlingBlock.Post(error);
+
+            return Array.Empty<TProcessDataMessage>();
+        }
+    }
+
+    private async Task<IEnumerable<TProcessDataMessage>> HandleOffsetLimitPagingAsync<TProcessDataMessage>(
+        StreamResourcePageMessage<TProcessDataMessage> message,
+        Options options,
+        ITargetBlock<ErrorItemMessage> errorHandlingBlock)
+    {
         long offset = message.Offset ?? throw new NullReferenceException("Offset is expected on resource page messages for the Ed-Fi ODS API.");
         int limit = message.Limit ?? throw new NullReferenceException("Limit is expected on resource page messages for the Ed-Fi ODS API.");
 

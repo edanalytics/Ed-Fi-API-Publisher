@@ -28,6 +28,12 @@ namespace EdFi.Tools.ApiPublisher.Core.Processing.Messages
         // --------------------------------
         public long? Offset { get; set; }
         public int? Limit { get; set; }
+
+        /// <summary>
+        /// For Ed-Fi cursor paging: starting pageToken for this worker (from /partitions), or null/empty for the first page of the resource.
+        /// </summary>
+        public string CursorStartPageToken { get; set; }
+
         public string PartitionFrom { get; set; }
         public string PartitionUntil { get; set; }
         public bool IsFinalPage { get; set; }
