@@ -127,7 +127,7 @@ public class EdFiApiAsSourceModule : Module
             builder.RegisterType<EdFiApiGraphMLDependencyMetadataProvider>()
                 .As<IGraphMLDependencyMetadataProvider>()
                 .WithParameter(
-                    // Configure to use with Target API
+                    // Configure to use with Source API
                     new ResolvedParameter(
                         (pi, ctx) => pi.ParameterType == typeof(IEdFiApiClientProvider),
                         (pi, ctx) => ctx.Resolve<ISourceEdFiApiClientProvider>()));

@@ -282,7 +282,11 @@ namespace EdFi.Tools.ApiPublisher.Tests.Helpers
             var sourceEdFiApiClientProvider = new EdFiApiClientProvider(new Lazy<EdFiApiClient>(SourceApiClientFactory));
             var targetEdFiApiClientProvider = new EdFiApiClientProvider(new Lazy<EdFiApiClient>(TargetApiClientFactory));
 
-            var resourceDependencyMetadataProvider = new EdFiApiGraphMLDependencyMetadataProvider(targetEdFiApiClientProvider);
+            var dependencyMetadataClientProvider = options.UseSourceDependencyMetadata
+                ? (IEdFiApiClientProvider) sourceEdFiApiClientProvider
+                : targetEdFiApiClientProvider;
+
+            var resourceDependencyMetadataProvider = new EdFiApiGraphMLDependencyMetadataProvider(dependencyMetadataClientProvider);
             var resourceDependencyProvider = new ResourceDependencyProvider(resourceDependencyMetadataProvider);
             var changeVersionProcessedWriter = A.Fake<IChangeVersionProcessedWriter>();
             var errorPublisher = A.Fake<IErrorPublisher>();
